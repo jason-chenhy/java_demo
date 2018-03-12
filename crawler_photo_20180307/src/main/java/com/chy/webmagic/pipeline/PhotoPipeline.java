@@ -1,5 +1,6 @@
 package com.chy.webmagic.pipeline;
 
+import com.chy.webmagic.constants.FileType;
 import com.chy.webmagic.constants.PageField;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -34,31 +35,33 @@ public class PhotoPipeline extends FilePipeline {
 
     @Override
     public void process(ResultItems resultItems, Task task) {
-        Set<String> imgs = (Set<String>) resultItems.getAll().get(PageField.FIELD_ALL_IMGS);
-        Set<String> finalImgs = imgs.size()==0?(Set<String>) resultItems.getAll().get(PageField.FIELD_SINGLETON_IMG):imgs;
+        Set<String> imgs = (Set<String>) resultItems.getAll().get(PageField.FIELD_CUSTOM_IMGS);
+        Set<String> finalImgs = imgs.size()==0?(Set<String>) resultItems.getAll().get(PageField.FIELD_ALL_IMG):imgs;
+        //logger.info(finalImgs.toString());
         for(String img : finalImgs) {
-            download(processImgUrl(img));
+            if (validateImgUrl(img)) {
+                logger.info("即将要下载的图片:"+img);
+                download(img);
+            }
         }
     }
 
     /**
      * 截取 img 的url路径
-     * 因为 img 标签的属性有 src、srch、loadsrc，所以需要截取
      * @param value
      * @return
      */
-    private String processImgUrl(String value) {
-        int start = value.indexOf(PageField.REGEX_HTTP);
-        if (start != -1) {
-            int tempJpg = value.toLowerCase().indexOf(FileSuffix.SUFFIX_JPG);
-            int tempPng = value.toLowerCase().indexOf(FileSuffix.SUFFIX_PNG);
-            int end = tempJpg!=-1 ? (tempJpg+3) : (tempPng!=-1 ? (tempPng+3) : value.length());
-            value = value.substring(start, end);
-        } else {
-            value = "";
+    private boolean validateImgUrl(String value) {
+        int httpIndex = value.indexOf(PageField.REGEX_HTTP);
+        if (httpIndex != -1) {
+            for (FileType fileType : FileType.values()) {
+                int suffixIndex = value.indexOf(fileType.getTypeName());
+                if (suffixIndex != -1 && (value.length()-fileType.getTypeName().length())==suffixIndex) {
+                    return true;
+                }
+            }
         }
-        logger.info(value);
-        return value;
+        return false;
     }
 
     /**

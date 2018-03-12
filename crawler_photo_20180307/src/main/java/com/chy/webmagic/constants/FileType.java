@@ -17,7 +17,7 @@ public enum FileType {
 
     public static FileType getFileType(String typeName) {
         for (FileType fileType : FileType.values()) {
-            if (fileType.getTypeName().equals(typeName)) {
+            if (fileType.getTypeName().equalsIgnoreCase(typeName)) {
                 return fileType;
             }
         }
