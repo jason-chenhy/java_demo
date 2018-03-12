@@ -28,7 +28,7 @@ public class MyPageProcesser implements PageProcessor{
     @Override
     public void process(Page page) {
         //二：抽取页面图片信息，并保存下来
-        List<String> allImgs = getAllIms(page);
+        List<String> allImgs = getAllImgs(page);
 
         page.putField(PageField.FIELD_ALL_IMGS, new HashSet<>(allImgs));
         if(allImgs.size() <= 0) {
@@ -56,7 +56,7 @@ public class MyPageProcesser implements PageProcessor{
      * @param page
      * @return
      */
-    private List<String> getAllIms(Page page) {
+    private List<String> getAllImgs(Page page) {
         List<String> allImgs = new ArrayList<>();
         String picSel = PropertyUtils.getValueString(Props.PROPERTY_CRAWLER_PAGE_PICTURE_SELECTOR, "li a img:src");
         if (picSel.contains(SELECTOR_SPLIT_REGEX)) {
