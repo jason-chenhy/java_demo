@@ -32,12 +32,12 @@ public class MyPageProcesser implements PageProcessor{
     @Override
     public void process(Page page) {
         //二：抽取页面图片信息，并保存下来
-        Set<String> imgUrls = getAllImgUrls(page.getHtml().css(CRAWLER_IMG_REGEX).all());
-        page.putField(PageField.FIELD_ALL_IMGS, imgUrls);
+        //Set<String> imgUrls = getAllImgUrls(page.getHtml().css(CRAWLER_IMG_REGEX).all());
+        //page.putField(PageField.FIELD_ALL_IMGS, imgUrls);
 
         //三：从页面发现后续的url地址来抓取
         //page.addTargetRequests(page.getHtml().links().regex(SiteImgDomain.getBaseUrl(site.getDomain())+CRAWLER_REGEX+CRAWLER_HTML_REGEX).all());
-        //getWholeTargetRequests(page.getHtml().links().regex("http://desk\\.zol\\.com\\.cn/\\w+/").all());
+        page.addTargetRequests(page.getHtml().links().regex(SiteImgDomain.getBaseUrl(site.getDomain())+CRAWLER_REGEX).all());
         //getWholeTargetRequests(page.getHtml().links().regex("http://desk\\.zol\\.com\\.cn/\\w+/").all());
     }
 
