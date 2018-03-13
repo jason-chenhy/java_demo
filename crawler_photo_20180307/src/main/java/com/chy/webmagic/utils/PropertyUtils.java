@@ -12,8 +12,12 @@ public class PropertyUtils {
 
     public static Properties props = null;
 
-    public static Properties initProperties(String file) {
-        if (props != null) {
+    static {
+        initProperties("src/main/resources/crawler.properties");
+    }
+
+    private static Properties initProperties(String file) {
+        if (props == null) {
             props = new Properties();
             try {
                 props.load(new FileInputStream(file));
@@ -35,5 +39,9 @@ public class PropertyUtils {
         } catch (Exception e) {
             return defaultValue;
         }
+    }
+
+    public static void main(String[] args) {
+        PropertyUtils.getValueString("crawler_page_picture_selector");
     }
 }

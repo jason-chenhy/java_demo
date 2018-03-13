@@ -1,6 +1,7 @@
 package com.chy.webmagic.pipeline;
 
 import com.chy.webmagic.constants.PageField;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -35,43 +36,24 @@ public class PhotoPipeline extends FilePipeline {
     @Override
     public void process(ResultItems resultItems, Task task) {
         Set<String> imgs = (Set<String>) resultItems.getAll().get(PageField.FIELD_ALL_IMGS);
-        Set<String> finalImgs = imgs.size()==0?(Set<String>) resultItems.getAll().get(PageField.FIELD_SINGLETON_IMG):imgs;
-        for(String img : finalImgs) {
-            download(processImgUrl(img));
+        for(String img : imgs) {
+            download(img, task);
         }
-    }
-
-    /**
-     * 截取 img 的url路径
-     * 因为 img 标签的属性有 src、srch、loadsrc，所以需要截取
-     * @param value
-     * @return
-     */
-    private String processImgUrl(String value) {
-        int start = value.indexOf(PageField.REGEX_HTTP);
-        if (start != -1) {
-            int tempJpg = value.toLowerCase().indexOf(FileSuffix.SUFFIX_JPG);
-            int tempPng = value.toLowerCase().indexOf(FileSuffix.SUFFIX_PNG);
-            int end = tempJpg!=-1 ? (tempJpg+3) : (tempPng!=-1 ? (tempPng+3) : value.length());
-            value = value.substring(start, end);
-        } else {
-            value = "";
-        }
-        logger.info(value);
-        return value;
     }
 
     /**
      * 下载图片
      * @param imgUrl
+     * @param task
      */
-    private void download(String imgUrl) {
+    private void download(String imgUrl, Task task) {
         if (!StringUtils.isBlank(imgUrl)) {
+            String path = this.path + PATH_SEPERATOR + task.getUUID() + PATH_SEPERATOR;
             HttpGet request = new HttpGet(imgUrl);
             try(CloseableHttpClient client = HttpClients.createDefault();
                 CloseableHttpResponse response = client.execute(request);
                 BufferedInputStream in = new BufferedInputStream(response.getEntity().getContent());
-                BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(getFile(path + imgUrl.substring(imgUrl.lastIndexOf("/")))))) {
+                BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(getFile(path + DigestUtils.md5Hex(imgUrl) + imgUrl.substring(imgUrl.lastIndexOf(".")))))) {
 
                 byte[] buf = new byte[2048];
                 int length = 0;

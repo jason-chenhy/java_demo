@@ -1,9 +1,8 @@
 package com.chy.webmagic.processer;
 
+import com.chy.webmagic.constants.FileType;
 import com.chy.webmagic.constants.PageField;
-import com.chy.webmagic.constants.Props;
-import com.chy.webmagic.utils.PropertyUtils;
-import sun.nio.cs.ext.PCK;
+import com.chy.webmagic.constants.SiteImgDomain;
 import us.codecraft.webmagic.Page;
 import us.codecraft.webmagic.Site;
 import us.codecraft.webmagic.processor.PageProcessor;
@@ -11,14 +10,19 @@ import us.codecraft.webmagic.processor.PageProcessor;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author chenhaoyu
  * @Created 2018-03-07 16:45
  */
 public class MyPageProcesser implements PageProcessor{
-    private static final String SELECTOR_SPLIT_REGEX = ",";
-    private static final String ATTRIBUTE_SPLIT_REGEX = ":";
+    private static final String CRAWLER_REGEX = ".*?.";
+    private static final String CRAWLER_IMG_REGEX = "img";
+    private static final String CRAWLER_HTML_REGEX = "html";
+
     /**
      * 一：抓取网站的相关配置，包括编码、抓取间隔、重试次数等
       */
@@ -28,14 +32,12 @@ public class MyPageProcesser implements PageProcessor{
     @Override
     public void process(Page page) {
         //二：抽取页面图片信息，并保存下来
-        List<String> allImgs = getAllImgs(page);
+        Set<String> imgUrls = getAllImgUrls(page.getHtml().css(CRAWLER_IMG_REGEX).all());
+        page.putField(PageField.FIELD_ALL_IMGS, imgUrls);
 
-        page.putField(PageField.FIELD_ALL_IMGS, new HashSet<>(allImgs));
-        if(allImgs.size() <= 0) {
-            page.putField(PageField.FIELD_SINGLETON_IMG, page.getHtml().$("img").all());
-        }
         //三：从页面发现后续的url地址来抓取
-        //page.addTargetRequests(page.getHtml().links().regex("http://desk\\.zol\\.com\\.cn/[\\w/]+\\.html").all());
+        //page.addTargetRequests(page.getHtml().links().regex(SiteImgDomain.getBaseUrl(site.getDomain())+CRAWLER_REGEX+CRAWLER_HTML_REGEX).all());
+        //getWholeTargetRequests(page.getHtml().links().regex("http://desk\\.zol\\.com\\.cn/\\w+/").all());
         //getWholeTargetRequests(page.getHtml().links().regex("http://desk\\.zol\\.com\\.cn/\\w+/").all());
     }
 
@@ -44,34 +46,43 @@ public class MyPageProcesser implements PageProcessor{
         return site;
     }
 
-    public List<String> getWholeTargetRequests(List<String> targetRequests) {
-        for (String str:targetRequests) {
-            System.out.println(str);
+    /**
+     * 获取所有的图片地址
+     * @param imgs
+     * @return
+     */
+    private Set<String> getAllImgUrls(List<String> imgs) {
+        Set<String> allImgs = new HashSet<>();
+        String[] fileTypes = FileType.getTypeNames();
+
+        String regex = "";
+        for (String img : imgs) {
+            for (String type : fileTypes) {
+                regex = SiteImgDomain.getImgDomain(site.getDomain())+CRAWLER_REGEX+type;
+
+                Set<String> tempImgs = getImgUrl(img, regex);
+                if (tempImgs!=null && tempImgs.size()>0) {
+                    allImgs.addAll(tempImgs);
+                    break;
+                }
+            }
         }
-        return null;
+        return allImgs;
     }
 
     /**
-     * 抽取页面图片信息，并保存下来
-     * @param page
+     * 正则获取所需字符串
+     * @param url
+     * @param regex
      * @return
      */
-    private List<String> getAllImgs(Page page) {
-        List<String> allImgs = new ArrayList<>();
-        String picSel = PropertyUtils.getValueString(Props.PROPERTY_CRAWLER_PAGE_PICTURE_SELECTOR, "li a img:src");
-        if (picSel.contains(SELECTOR_SPLIT_REGEX)) {
-            String[] sels = picSel.split(SELECTOR_SPLIT_REGEX);
-            for (String sel : sels) {
-                String[] sel_attr = sel.split(ATTRIBUTE_SPLIT_REGEX);
-                List<String> tempList = page.getHtml().$(sel_attr[0], sel_attr[1]).all();
-                if (tempList!=null && tempList.size()>0) {
-                    allImgs.addAll(tempList);
-                }
-            }
-        }else {
-            String[] sel_attr = picSel.split(ATTRIBUTE_SPLIT_REGEX);
-            allImgs = page.getHtml().$(sel_attr[0], sel_attr[1]).all();
+    private Set<String> getImgUrl(String url, String regex) {
+        Set<String> urls = new HashSet<>();
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(url);
+        while (matcher.find()) {
+            urls.add(matcher.group());
         }
-        return allImgs;
+        return urls;
     }
 }
