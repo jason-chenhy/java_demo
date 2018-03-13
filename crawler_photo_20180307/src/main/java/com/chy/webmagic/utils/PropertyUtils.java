@@ -15,7 +15,7 @@ public class PropertyUtils {
     public static Properties props = null;
 
     static {
-        initProperties("crawler.properties");
+        initProperties("src/main/resources/crawler.properties");
     }
 
     public static Properties initProperties(String file) {
