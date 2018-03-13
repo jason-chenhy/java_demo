@@ -1,7 +1,7 @@
 package com.chy.webmagic.pipeline;
 
-import com.chy.webmagic.constants.FileType;
 import com.chy.webmagic.constants.PageField;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -35,46 +35,25 @@ public class PhotoPipeline extends FilePipeline {
 
     @Override
     public void process(ResultItems resultItems, Task task) {
-        Set<String> imgs = (Set<String>) resultItems.getAll().get(PageField.FIELD_CUSTOM_IMGS);
-        Set<String> finalImgs = imgs.size()==0?(Set<String>) resultItems.getAll().get(PageField.FIELD_ALL_IMG):imgs;
-        //logger.info(finalImgs.toString());
-        for(String img : finalImgs) {
-            if (validateImgUrl(img)) {
-                logger.info("即将要下载的图片:"+img);
-                download(img);
-            }
+        Set<String> imgs = (Set<String>) resultItems.getAll().get(PageField.FIELD_ALL_IMGS);
+        for(String img : imgs) {
+            download(img, task);
         }
-    }
-
-    /**
-     * 截取 img 的url路径
-     * @param value
-     * @return
-     */
-    private boolean validateImgUrl(String value) {
-        int httpIndex = value.indexOf(PageField.REGEX_HTTP);
-        if (httpIndex != -1) {
-            for (FileType fileType : FileType.values()) {
-                int suffixIndex = value.indexOf(fileType.getTypeName());
-                if (suffixIndex != -1 && (value.length()-fileType.getTypeName().length())==suffixIndex) {
-                    return true;
-                }
-            }
-        }
-        return false;
     }
 
     /**
      * 下载图片
      * @param imgUrl
+     * @param task
      */
-    private void download(String imgUrl) {
+    private void download(String imgUrl, Task task) {
         if (!StringUtils.isBlank(imgUrl)) {
+            String path = this.path + PATH_SEPERATOR + task.getUUID() + PATH_SEPERATOR;
             HttpGet request = new HttpGet(imgUrl);
             try(CloseableHttpClient client = HttpClients.createDefault();
                 CloseableHttpResponse response = client.execute(request);
                 BufferedInputStream in = new BufferedInputStream(response.getEntity().getContent());
-                BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(getFile(path + imgUrl.substring(imgUrl.lastIndexOf("/")))))) {
+                BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(getFile(path + DigestUtils.md5Hex(imgUrl) + imgUrl.substring(imgUrl.lastIndexOf(".")))))) {
 
                 byte[] buf = new byte[2048];
                 int length = 0;

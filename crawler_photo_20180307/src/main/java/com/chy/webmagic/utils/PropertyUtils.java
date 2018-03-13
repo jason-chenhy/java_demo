@@ -1,7 +1,5 @@
 package com.chy.webmagic.utils;
 
-import com.chy.webmagic.constants.Props;
-
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Properties;
@@ -18,7 +16,7 @@ public class PropertyUtils {
         initProperties("src/main/resources/crawler.properties");
     }
 
-    public static Properties initProperties(String file) {
+    private static Properties initProperties(String file) {
         if (props == null) {
             props = new Properties();
             try {
@@ -44,8 +42,6 @@ public class PropertyUtils {
     }
 
     public static void main(String[] args) {
-
-        PropertyUtils.getValueString(Props.PROPERTY_CRAWLER_PAGE_CUSTOM_IMG_SELECTOR);
-
+        PropertyUtils.getValueString("crawler_page_picture_selector");
     }
 }
